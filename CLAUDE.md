@@ -12,6 +12,13 @@ Datasheets and the Hubble docs are kept locally in `docs/local/`, not committed.
 
 `docs/local/` is gitignored, so ripgrep-based search skips it unless you point at it explicitly (pass the path, or `--no-ignore`).
 
+## Firmware toolchain
+
+The Zephyr workspace (Zephyr, HALs, Hubble SDK, toolchain, venv) lives outside the repo, in `xiao-ws/` next to the main checkout, shared by all worktrees. `west.yml` and `requirements.txt` pin it (no Homebrew); `scripts/bootstrap.sh` builds it.
+
+- `source <xiao-ws>/env.sh` before any `west` command
+- Change versions by editing the pins and re-running the bootstrap, never by hand in the workspace
+
 ## Git
 
 - Never force-push (`git push --force`, `--force-with-lease`, or equivalent)

@@ -1,0 +1,11 @@
+# Workspace tools, installed into the shared venv by scripts/bootstrap.sh.
+# Zephyr's own Python requirements come from `west packages pip`.
+west==1.5.0
+pyocd==0.46.0
+pyhubblenetwork==0.15.0
+
+# Build tools from PyPI rather than Homebrew, so they come as native wheels for
+# whichever machine runs the bootstrap. CMake stays on 3.x: some Zephyr modules
+# still declare minimum versions that CMake 4 rejects.
+cmake==3.31.6
+ninja==1.13.2
