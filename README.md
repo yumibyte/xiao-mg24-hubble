@@ -8,7 +8,7 @@ Hubble satellite firmware for the Seeed XIAO MG24, on Zephyr.
 ## Setup
 
 ```sh
-./scripts/bootstrap.sh
+./scripts/setup.sh
 ```
 
 Needs only `git` and [uv](https://docs.astral.sh/uv/). This builds a shared Zephyr workspace at
