@@ -1,11 +1,13 @@
-# Pinned firmware dependencies. scripts/bootstrap.sh copies this into the
+# Pinned firmware dependencies. scripts/setup.sh copies this into the
 # shared workspace's manifest/ folder, so re-run it after changing this file.
 manifest:
   remotes:
     - name: zephyrproject-rtos
       url-base: https://github.com/zephyrproject-rtos
+    # Our fork of HubbleNetwork/hubble-device-sdk, so SDK changes can be
+    # committed there and pinned here.
     - name: hubble
-      url-base: https://github.com/HubbleNetwork
+      url-base: https://github.com/yumibyte
 
   projects:
     # Zephyr version the Hubble SDK 3.1 release builds against.
@@ -23,12 +25,12 @@ manifest:
           - tf-psa-crypto
           - picolibc
 
-    # Hubble Device SDK release/3.1-branch, pinned by commit so upstream pushes
-    # to the branch can't change the build.
+    # Hubble Device SDK, pinned by commit so pushes to a branch can't change the
+    # build.
     - name: hubblenetwork-sdk
       remote: hubble
       repo-path: hubble-device-sdk
-      revision: f45e1c7ad04f2c536debb93cbf253c521db22e28
+      revision: f45e1c7ad04f2c536debb93cbf253c521db22e28 # v3.1.0
       path: modules/lib/hubblenetwork-sdk
 
   self:

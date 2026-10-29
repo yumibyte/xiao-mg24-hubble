@@ -14,10 +14,18 @@ Datasheets and the Hubble docs are kept locally in `docs/local/`, not committed.
 
 ## Firmware toolchain
 
-The Zephyr workspace (Zephyr, HALs, Hubble SDK, toolchain, venv) lives outside the repo, in `xiao-ws/` next to the main checkout, shared by all worktrees. `west.yml` and `requirements.txt` pin it (no Homebrew); `scripts/bootstrap.sh` builds it.
+The Zephyr workspace (Zephyr, HALs, Hubble SDK, toolchain, venv) lives outside the repo, in `xiao-ws/` next to the main checkout, shared by all worktrees. `west.yml` and `requirements.txt` pin it (no Homebrew); `scripts/setup.sh` builds it.
 
 - `source <xiao-ws>/env.sh` before any `west` command
-- Change versions by editing the pins and re-running the bootstrap, never by hand in the workspace
+- Change versions by editing the pins and re-running `scripts/setup.sh`, never by hand in the workspace
+
+### Editing the Hubble SDK
+
+The SDK comes from our fork, `yumibyte/hubble-device-sdk`. Its checkout at `<xiao-ws>/modules/lib/hubblenetwork-sdk` has remotes `fork` (ours) and `upstream` (HubbleNetwork).
+
+- Work on a branch there (`xiao-mg24`, based on v3.1.0), commit, and push to `fork`
+- Then bump `revision:` in `west.yml` to that commit in a PR here; the build only uses what `west.yml` pins
+- `west update` checks out the pinned commit detached, leaving the branch and its commits in place
 
 ## Git
 
