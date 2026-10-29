@@ -1,0 +1,35 @@
+# Pinned firmware dependencies. scripts/bootstrap.sh copies this into the
+# shared workspace's manifest/ folder, so re-run it after changing this file.
+manifest:
+  remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
+    - name: hubble
+      url-base: https://github.com/HubbleNetwork
+
+  projects:
+    # Zephyr version the Hubble SDK 3.1 release builds against.
+    - name: zephyr
+      remote: zephyrproject-rtos
+      revision: v4.4.0
+      import:
+        # Only what the XIAO MG24 (EFR32MG24, Cortex-M33) and Hubble's PSA
+        # crypto backend need; the full Zephyr manifest is several GB of HALs.
+        name-allowlist:
+          - cmsis
+          - cmsis_6
+          - hal_silabs
+          - mbedtls
+          - tf-psa-crypto
+          - picolibc
+
+    # Hubble Device SDK release/3.1-branch, pinned by commit so upstream pushes
+    # to the branch can't change the build.
+    - name: hubblenetwork-sdk
+      remote: hubble
+      repo-path: hubble-device-sdk
+      revision: f45e1c7ad04f2c536debb93cbf253c521db22e28
+      path: modules/lib/hubblenetwork-sdk
+
+  self:
+    path: manifest
