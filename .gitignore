@@ -6,3 +6,6 @@
 docs/local/
 
 .DS_Store
+
+# west build output
+build/
