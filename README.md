@@ -5,6 +5,9 @@ Hubble satellite firmware for the Seeed XIAO MG24, on Zephyr.
 `app/` starts from the Hubble SDK's `sat-continuous` sample: it sends a satellite packet every
 `CONFIG_SAMPLE_SAT_TX_INTERVAL_SECONDS` (10 s by default).
 
+[docs/satellite-packet.md](docs/satellite-packet.md) explains the satellite packet format, the 13-byte
+payload limit and the 1,024-new-packets-per-day rule.
+
 ## Setup
 
 ```sh
