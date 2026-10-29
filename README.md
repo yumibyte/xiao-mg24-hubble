@@ -26,5 +26,8 @@ west flash -r pyocd
 ```
 
 Register the device key in Hubble as **AES-256** with the **Device uptime** counter source. Without a
-key the firmware still builds and transmits, using an all-zero placeholder key. Logs come out on the
-board's USB serial port.
+key the firmware still builds and transmits, using an all-zero placeholder key.
+
+Logging is off by default, because builds with it on were not received by the satellite network.
+For bench debugging, add `-DEXTRA_CONF_FILE=debug.conf` to the build to get logs on the board's USB
+serial port, and flash a build without it before testing reception.
