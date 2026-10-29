@@ -6,6 +6,7 @@
 #include <hubble/hubble.h>
 #include <hubble/sat/packet.h>
 
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/base64.h>
@@ -16,6 +17,14 @@
 #include <string.h>
 
 LOG_MODULE_REGISTER(main);
+
+/*
+ * Pulsed after each packet sent, so a board running with logging off (see
+ * prj.conf) still shows it is transmitting. Boards without a led0 alias get an
+ * empty spec and skip the pulse.
+ */
+#define LED_PULSE_MS 50
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 
 /*
  * Decoded master key. The SDK stores this pointer directly, so the buffer has
@@ -103,6 +112,9 @@ int main(void)
 		goto end;
 	}
 
+	bool led_ok = gpio_is_ready_dt(&led) &&
+		      gpio_pin_configure_dt(&led, GPIO_OUTPUT_INACTIVE) == 0;
+
 	for (;;) {
 		err = hubble_sat_packet_get(&pkt, NULL, 0);
 		if (err != 0) {
@@ -118,6 +130,13 @@ int main(void)
 		if (err != 0) {
 			LOG_ERR("Failed to transmit packet");
 			goto end;
+		}
+
+		/* After the send returns, so the GPIO never toggles mid-packet. */
+		if (led_ok) {
+			gpio_pin_set_dt(&led, 1);
+			k_sleep(K_MSEC(LED_PULSE_MS));
+			gpio_pin_set_dt(&led, 0);
 		}
 
 		k_sleep(K_SECONDS(CONFIG_SAMPLE_SAT_TX_INTERVAL_SECONDS));
