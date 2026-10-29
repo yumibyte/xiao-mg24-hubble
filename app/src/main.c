@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/base64.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <errno.h>
 #include <stdint.h>
@@ -25,6 +26,15 @@ LOG_MODULE_REGISTER(main);
  */
 #define LED_PULSE_MS 50
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
+
+/*
+ * Every packet carries the largest payload the satellite packet allows (the SDK
+ * only accepts 0, 4, 9 or 13 bytes). Until real data goes here: bytes 0-3 are a
+ * big-endian sequence number, so received packets can be counted and gaps
+ * spotted, and bytes 4-12 hold their own index (0x04..0x0c), so a correct
+ * decode is easy to recognise.
+ */
+static uint8_t payload[HUBBLE_SAT_PAYLOAD_MAX];
 
 /*
  * Decoded master key. The SDK stores this pointer directly, so the buffer has
@@ -115,8 +125,14 @@ int main(void)
 	bool led_ok = gpio_is_ready_dt(&led) &&
 		      gpio_pin_configure_dt(&led, GPIO_OUTPUT_INACTIVE) == 0;
 
-	for (;;) {
-		err = hubble_sat_packet_get(&pkt, NULL, 0);
+	for (size_t i = sizeof(uint32_t); i < sizeof(payload); i++) {
+		payload[i] = i;
+	}
+
+	for (uint32_t seq = 0;; seq++) {
+		sys_put_be32(seq, payload);
+
+		err = hubble_sat_packet_get(&pkt, payload, sizeof(payload));
 		if (err != 0) {
 			LOG_ERR("Failed to get Hubble Sat Network packet");
 			goto end;
