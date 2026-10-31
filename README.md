@@ -36,6 +36,20 @@ west build -b nrf21540dk/nrf52840 app -- -DCONFIG_SAMPLE_HUBBLE_KEY=\"<base64 de
 west flash -r jlink
 ```
 
+To transmit only around a predicted pass, power the board on at a planned time and set when to start
+and how long to send, relative to power-on. For example, power on at 01:50 for a pass rising at 02:00,
+then send one packet a second for 15 minutes from 01:55:
+
+```sh
+west build -b nrf21540dk/nrf52840 app -- -DCONFIG_SAMPLE_HUBBLE_KEY=\"<key>\" \
+  -DCONFIG_SAMPLE_SAT_TX_INTERVAL_SECONDS=1 \
+  -DCONFIG_SAMPLE_SAT_TX_START_DELAY_SECONDS=300 \
+  -DCONFIG_SAMPLE_SAT_TX_WINDOW_SECONDS=900
+```
+
+Every packet gets a new sequence number, so the build fails if the window would need more than the
+1,024 a key gets per day ([docs/satellite-packet.md](docs/satellite-packet.md)).
+
 Register the device key in Hubble as **AES-256** with the **Device uptime** counter source. Without a
 key the firmware still builds and transmits, using an all-zero placeholder key.
 

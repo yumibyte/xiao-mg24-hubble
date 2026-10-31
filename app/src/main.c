@@ -36,6 +36,12 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios
  */
 static uint8_t payload[HUBBLE_SAT_PAYLOAD_MAX];
 
+/* Every packet in the window gets a new sequence number; see Kconfig. */
+BUILD_ASSERT(CONFIG_SAMPLE_SAT_TX_WINDOW_SECONDS == 0 ||
+		     DIV_ROUND_UP(CONFIG_SAMPLE_SAT_TX_WINDOW_SECONDS,
+				  CONFIG_SAMPLE_SAT_TX_INTERVAL_SECONDS) <= 1024,
+	     "Transmit window needs more than the 1,024 sequence numbers per day");
+
 /*
  * Decoded master key. The SDK stores this pointer directly, so the buffer has
  * static storage duration and outlives all SDK calls. Zero-initialised, which
@@ -129,7 +135,20 @@ int main(void)
 		payload[i] = i;
 	}
 
+	k_sleep(K_SECONDS(CONFIG_SAMPLE_SAT_TX_START_DELAY_SECONDS));
+	int64_t start_ms = k_uptime_get();
+
 	for (uint32_t seq = 0;; seq++) {
+		/* Scheduled from start_ms so time on air doesn't stretch the period. */
+		int64_t at_ms = start_ms + (int64_t)seq *
+			CONFIG_SAMPLE_SAT_TX_INTERVAL_SECONDS * MSEC_PER_SEC;
+
+		if (CONFIG_SAMPLE_SAT_TX_WINDOW_SECONDS > 0 &&
+		    at_ms - start_ms >= CONFIG_SAMPLE_SAT_TX_WINDOW_SECONDS * MSEC_PER_SEC) {
+			break;
+		}
+		k_sleep(K_TIMEOUT_ABS_MS(at_ms));
+
 		sys_put_be32(seq, payload);
 
 		err = hubble_sat_packet_get(&pkt, payload, sizeof(payload));
@@ -154,8 +173,6 @@ int main(void)
 			k_sleep(K_MSEC(LED_PULSE_MS));
 			gpio_pin_set_dt(&led, 0);
 		}
-
-		k_sleep(K_SECONDS(CONFIG_SAMPLE_SAT_TX_INTERVAL_SECONDS));
 	}
 
 end:
