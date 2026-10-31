@@ -15,11 +15,13 @@ manifest:
       remote: zephyrproject-rtos
       revision: v4.4.0
       import:
-        # Only what the XIAO MG24 (EFR32MG24, Cortex-M33) and Hubble's PSA
-        # crypto backend need; the full Zephyr manifest is several GB of HALs.
+        # Only what the XIAO MG24 (EFR32MG24), the nRF21540-DK (nRF52840) and
+        # Hubble's PSA crypto backend need; the full Zephyr manifest is several
+        # GB of HALs.
         name-allowlist:
           - cmsis
           - cmsis_6
+          - hal_nordic
           - hal_silabs
           - mbedtls
           - tf-psa-crypto

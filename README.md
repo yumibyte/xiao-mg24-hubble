@@ -28,6 +28,14 @@ west build -b xiao_mg24 app -- -DCONFIG_SAMPLE_HUBBLE_KEY=\"<base64 device key>\
 west flash -r pyocd
 ```
 
+For the Nordic nRF21540-DK (nRF52840 with the nRF21540 +20 dBm front-end), build for
+`nrf21540dk/nrf52840` and flash with [SEGGER J-Link](https://www.segger.com/downloads/jlink/):
+
+```sh
+west build -b nrf21540dk/nrf52840 app -- -DCONFIG_SAMPLE_HUBBLE_KEY=\"<base64 device key>\"
+west flash -r jlink
+```
+
 Register the device key in Hubble as **AES-256** with the **Device uptime** counter source. Without a
 key the firmware still builds and transmits, using an all-zero placeholder key.
 

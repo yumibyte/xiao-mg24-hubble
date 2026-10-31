@@ -52,8 +52,8 @@ cd "$WS"
 west update --narrow --fetch-opt=--depth=1
 west packages pip --install -- --quiet
 
-echo "== silabs radio blob"
-west blobs fetch hal_silabs
+echo "== radio blobs (silabs, hubble nordic)"
+west blobs fetch hal_silabs hubblenetwork-sdk
 
 echo "== zephyr sdk $ZEPHYR_SDK_VERSION (arm only)"
 SDK_DIR="$WS/zephyr-sdk-$ZEPHYR_SDK_VERSION"
