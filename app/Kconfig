@@ -10,11 +10,26 @@ config SAMPLE_PROVIDE_SAT_BOARD_SUPPORT
 	board APIs will be mocked in the sample.
 
 config SAMPLE_SAT_TX_INTERVAL_SECONDS
-    int "Inter-transmission sleep in seconds"
+    int "Time between transmissions in seconds"
     default 10
     help
-	Time the sample sleeps between consecutive satellite packet
-	transmissions, in seconds.
+	Time from the start of one satellite packet transmission to the
+	start of the next, in seconds.
+
+config SAMPLE_SAT_TX_START_DELAY_SECONDS
+    int "Delay from power-on to the first transmission in seconds"
+    default 0
+    help
+	Lets the board be powered on well before a predicted satellite pass
+	without using up sequence numbers while no satellite is in view.
+
+config SAMPLE_SAT_TX_WINDOW_SECONDS
+    int "How long to keep transmitting, in seconds (0 = forever)"
+    default 0
+    help
+	After the start delay, transmit for this long and then stop. Each
+	packet uses one of the 1,024 sequence numbers a key gets per day,
+	so the build fails if the window would need more than that.
 
 config SAMPLE_HUBBLE_KEY
     string "Base64-encoded Hubble master key"
