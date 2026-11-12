@@ -28,13 +28,16 @@ LOG_MODULE_REGISTER(main);
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 
 /*
- * Every packet carries the largest payload the satellite packet allows (the SDK
- * only accepts 0, 4, 9 or 13 bytes). Until real data goes here: bytes 0-3 are a
- * big-endian sequence number, so received packets can be counted and gaps
- * spotted, and bytes 4-12 hold their own index (0x04..0x0c), so a correct
- * decode is easy to recognise.
+ * Every packet carries CONFIG_SAMPLE_SAT_PAYLOAD_SIZE bytes (13, the most the
+ * satellite packet allows, by default; the SDK only accepts 0, 4, 9 or 13).
+ * Until real data goes here: bytes 0-3 are a big-endian sequence number, so
+ * received packets can be counted and gaps spotted, and any bytes after that
+ * hold their own index (0x04..0x0c), so a correct decode is easy to recognise.
  */
-static uint8_t payload[HUBBLE_SAT_PAYLOAD_MAX];
+BUILD_ASSERT(CONFIG_SAMPLE_SAT_PAYLOAD_SIZE == 4 || CONFIG_SAMPLE_SAT_PAYLOAD_SIZE == 9 ||
+		     CONFIG_SAMPLE_SAT_PAYLOAD_SIZE == 13,
+	     "CONFIG_SAMPLE_SAT_PAYLOAD_SIZE must be 4, 9 or 13");
+static uint8_t payload[CONFIG_SAMPLE_SAT_PAYLOAD_SIZE];
 
 /* Every packet in the window gets a new sequence number; see Kconfig. */
 BUILD_ASSERT(CONFIG_SAMPLE_SAT_TX_WINDOW_SECONDS == 0 ||

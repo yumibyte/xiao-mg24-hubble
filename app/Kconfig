@@ -31,6 +31,15 @@ config SAMPLE_SAT_TX_WINDOW_SECONDS
 	packet uses one of the 1,024 sequence numbers a key gets per day,
 	so the build fails if the window would need more than that.
 
+config SAMPLE_SAT_PAYLOAD_SIZE
+    int "Payload bytes in each satellite packet (4, 9 or 13)"
+    default 13
+    range 4 13
+    help
+	Bytes 0-3 carry the packet's sequence number, so 4 is the smallest
+	size this sample sends. The SDK only accepts 0, 4, 9 or 13; larger
+	payloads take more symbols, and so longer, on the air.
+
 config SAMPLE_SAT_TX_TIMING
     bool "Measure how long each satellite packet takes to send"
     select TIMING_FUNCTIONS
