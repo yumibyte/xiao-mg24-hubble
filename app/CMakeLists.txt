@@ -16,3 +16,9 @@ project(app LANGUAGES C)
 # placeholder. See src/main.c and Kconfig.
 
 target_sources(app PRIVATE src/main.c)
+
+# Bench timing (timing.conf): route the SDK's call to the board radio send
+# through __wrap_hubble_sat_board_packet_send() in main.c, without patching the SDK.
+if(CONFIG_SAMPLE_SAT_TX_TIMING)
+  zephyr_ld_options(-Wl,--wrap=hubble_sat_board_packet_send)
+endif()
