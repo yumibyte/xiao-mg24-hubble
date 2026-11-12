@@ -28,13 +28,16 @@ LOG_MODULE_REGISTER(main);
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 
 /*
- * Every packet carries the largest payload the satellite packet allows (the SDK
- * only accepts 0, 4, 9 or 13 bytes). Until real data goes here: bytes 0-3 are a
- * big-endian sequence number, so received packets can be counted and gaps
- * spotted, and bytes 4-12 hold their own index (0x04..0x0c), so a correct
- * decode is easy to recognise.
+ * Every packet carries CONFIG_SAMPLE_SAT_PAYLOAD_SIZE bytes (13, the most the
+ * satellite packet allows, by default; the SDK only accepts 0, 4, 9 or 13).
+ * Until real data goes here: bytes 0-3 are a big-endian sequence number, so
+ * received packets can be counted and gaps spotted, and any bytes after that
+ * hold their own index (0x04..0x0c), so a correct decode is easy to recognise.
  */
-static uint8_t payload[HUBBLE_SAT_PAYLOAD_MAX];
+BUILD_ASSERT(CONFIG_SAMPLE_SAT_PAYLOAD_SIZE == 4 || CONFIG_SAMPLE_SAT_PAYLOAD_SIZE == 9 ||
+		     CONFIG_SAMPLE_SAT_PAYLOAD_SIZE == 13,
+	     "CONFIG_SAMPLE_SAT_PAYLOAD_SIZE must be 4, 9 or 13");
+static uint8_t payload[CONFIG_SAMPLE_SAT_PAYLOAD_SIZE];
 
 /* Every packet in the window gets a new sequence number; see Kconfig. */
 BUILD_ASSERT(CONFIG_SAMPLE_SAT_TX_WINDOW_SECONDS == 0 ||
@@ -104,6 +107,54 @@ int hubble_sat_board_packet_send(const struct hubble_sat_packet_frames *packet)
 
 #endif /* CONFIG_SAMPLE_PROVIDE_SAT_BOARD_SUPPORT */
 
+#ifdef CONFIG_SAMPLE_SAT_TX_TIMING
+#include <zephyr/timing/timing.h>
+
+/*
+ * Filled by the wrapper below for the most recent radio send. Two clocks:
+ * the DWT CPU cycle counter stops while the core sleeps (the port waits on a
+ * semaphore for each symbol), so it gives CPU-active time; the system clock
+ * (k_cycle_get_32, the 32.768 kHz RTC on nRF) keeps running and gives wall-clock time.
+ */
+static uint64_t radio_cycles;
+static uint32_t radio_sys_cycles;
+static size_t radio_symbols;
+
+int __real_hubble_sat_board_packet_send(const struct hubble_sat_packet_frames *packet);
+
+/*
+ * The linker routes the SDK's call to the board radio send here (see
+ * CMakeLists.txt), so this times only putting the symbols on the air:
+ * no packet encoding, radio enable/disable or FEM power-up in the port.
+ */
+int __wrap_hubble_sat_board_packet_send(const struct hubble_sat_packet_frames *packet)
+{
+	uint32_t s0 = k_cycle_get_32();
+	timing_t t0 = timing_counter_get();
+	int ret = __real_hubble_sat_board_packet_send(packet);
+	timing_t t1 = timing_counter_get();
+	uint32_t s1 = k_cycle_get_32();
+
+	radio_cycles = timing_cycles_get(&t0, &t1);
+	radio_sys_cycles = s1 - s0;
+	radio_symbols = packet->total_number_of_symbols;
+
+	return ret;
+}
+
+static void tx_timing_print(uint32_t seq, uint32_t send_sys_cycles)
+{
+	uint64_t wall_us = k_cyc_to_us_near64(radio_sys_cycles);
+	uint64_t cpu_us = timing_cycles_to_ns(radio_cycles) / 1000U;
+	uint64_t send_us = k_cyc_to_us_near64(send_sys_cycles);
+	uint64_t per_symbol_us = radio_symbols ? wall_us / radio_symbols : 0;
+
+	printk("tx seq %u: %u symbols, radio wall %llu us (%llu us/symbol), "
+	       "radio CPU-active %llu us, hubble_sat_packet_send wall %llu us\n",
+	       seq, (unsigned int)radio_symbols, wall_us, per_symbol_us, cpu_us, send_us);
+}
+#endif /* CONFIG_SAMPLE_SAT_TX_TIMING */
+
 
 int main(void)
 {
@@ -127,6 +178,11 @@ int main(void)
 		LOG_ERR("Failed to initialize Hubble Sat Network");
 		goto end;
 	}
+
+#ifdef CONFIG_SAMPLE_SAT_TX_TIMING
+	timing_init();
+	timing_start();
+#endif
 
 	bool led_ok = gpio_is_ready_dt(&led) &&
 		      gpio_pin_configure_dt(&led, GPIO_OUTPUT_INACTIVE) == 0;
@@ -161,11 +217,20 @@ int main(void)
 		 * transmission instead of a sequence. This is only for testing
 		 * purposes and not recommended for production.
 		 */
+#ifdef CONFIG_SAMPLE_SAT_TX_TIMING
+		uint32_t send_t0 = k_cycle_get_32();
+#endif
 		err = hubble_sat_packet_send(&pkt, HUBBLE_SAT_RELIABILITY_NONE);
+#ifdef CONFIG_SAMPLE_SAT_TX_TIMING
+		uint32_t send_t1 = k_cycle_get_32();
+#endif
 		if (err != 0) {
 			LOG_ERR("Failed to transmit packet");
 			goto end;
 		}
+#ifdef CONFIG_SAMPLE_SAT_TX_TIMING
+		tx_timing_print(seq, (uint32_t)(send_t1 - send_t0));
+#endif
 
 		/* After the send returns, so the GPIO never toggles mid-packet. */
 		if (led_ok) {

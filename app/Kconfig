@@ -31,6 +31,25 @@ config SAMPLE_SAT_TX_WINDOW_SECONDS
 	packet uses one of the 1,024 sequence numbers a key gets per day,
 	so the build fails if the window would need more than that.
 
+config SAMPLE_SAT_PAYLOAD_SIZE
+    int "Payload bytes in each satellite packet (4, 9 or 13)"
+    default 13
+    range 4 13
+    help
+	Bytes 0-3 carry the packet's sequence number, so 4 is the smallest
+	size this sample sends. The SDK only accepts 0, 4, 9 or 13; larger
+	payloads take more symbols, and so longer, on the air.
+
+config SAMPLE_SAT_TX_TIMING
+    bool "Measure how long each satellite packet takes to send"
+    select TIMING_FUNCTIONS
+    help
+	Bench measurement: wraps hubble_sat_board_packet_send() at link
+	time and times it, and the whole hubble_sat_packet_send() call,
+	with the timing API (the DWT CPU cycle counter on Cortex-M when
+	CORTEX_M_DWT is on). Prints one line per packet with printk.
+	Enable with -DEXTRA_CONF_FILE=timing.conf.
+
 config SAMPLE_HUBBLE_KEY
     string "Base64-encoded Hubble master key"
     default ""
